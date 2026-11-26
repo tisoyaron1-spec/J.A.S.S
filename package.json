@@ -1,0 +1,11 @@
+{
+  "name": "aegis-security-dashboard",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}

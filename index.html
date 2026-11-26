@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEGIS // Automated Security Operations Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Authentication Modal -->
+  <div class="auth-backdrop" id="authModal">
+    <div class="auth-card card">
+      <div class="auth-header">
+        <span class="badge-pill">AEGIS SOC ACCESS</span>
+        <h2>Sign In to Security Console</h2>
+        <p class="muted-text">Authenticate with your analyst or admin credentials.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button type="button" class="tab-btn active" id="tabLogin">Login</button>
+        <button type="button" class="tab-btn" id="tabRegister">Create Account</button>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <div class="field" id="usernameField" style="display: none;">
+          <label for="authUsername">Username</label>
+          <input type="text" id="authUsername" placeholder="e.g. aaron_sec" />
+        </div>
+
+        <div class="field">
+          <label for="authEmail">Email Address</label>
+          <input type="email" id="authEmail" placeholder="analyst@aegis.local" required />
+        </div>
+
+        <div class="field">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" placeholder="Minimum 8 characters" required />
+        </div>
+
+        <div class="field" id="roleField" style="display: none;">
+          <label for="authRole">Role</label>
+          <select id="authRole">
+            <option value="analyst">Analyst (Log, Block IP, Purge)</option>
+            <option value="admin">Admin (Full Control + Toggle Rules)</option>
+            <option value="viewer">Viewer (Read-Only)</option>
+          </select>
+        </div>
+
+        <p class="form-error" id="authError"></p>
+        <button type="submit" class="btn-primary full-width" id="authSubmitBtn">Continue to Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Shell -->
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="status-dot" id="systemStatusDot"></span>
+        <div>
+          <h1>AEGIS <span>SOC</span></h1>
+          <small class="muted-text" id="sessionUserLabel">Not authenticated</small>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <span class="badge-pill" id="engineStatus">Automation: ACTIVE</span>
+        <button type="button" id="simulateAttackBtn" class="btn-outline">Simulate Threat Spike</button>
+        <button type="button" id="purgeSessionsBtn" class="btn-primary">Purge Stale Sessions</button>
+        <button type="button" id="logoutBtn" class="btn-outline">Logout</button>
+      </div>
+    </header>
+
+    <!-- KPI Summary Row -->
+    <section class="kpi-grid">
+      <div class="card">
+        <span class="card-label">Firewall Posture</span>
+        <div class="card-value" id="kpiFirewall">ENFORCED</div>
+        <span class="card-sub">WAF & edge policy inspection</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Threats Neutralized</span>
+        <div class="card-value" id="kpiThreats">0</div>
+        <span class="card-sub" id="kpiThreatDelta">Synced with security ledger</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Blocked IPs</span>
+        <div class="card-value" id="kpiBlockedIps">0</div>
+        <span class="card-sub">Validated IPv4/IPv6 registry</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Purged Sessions</span>
+        <div class="card-value" id="kpiPurged">0</div>
+        <span class="card-sub">Unauthorized session revocations</span>
+      </div>
+    </section>
+
+    <!-- Main Content Grid -->
+    <main class="main-grid">
+      <div class="left-column">
+        <section class="card">
+          <div class="section-header">
+            <h2>Real-Time Traffic & Anomaly Telemetry</h2>
+            <span class="muted-text">4s telemetry interval</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="trafficChart"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-header log-header">
+            <h2>Live Security Event Feed</h2>
+            <div class="filter-group">
+              <input type="text" id="logSearchInput" placeholder="Filter IP or event..." />
+              <select id="severityFilter">
+                <option value="ALL">All Severities</option>
+                <option value="CRITICAL">CRITICAL</option>
+                <option value="HIGH">HIGH</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="LOW">LOW</option>
+              </select>
+              <button type="button" id="refreshLogsBtn" class="text-btn">Refresh</button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Event</th>
+                  <th>Source IP</th>
+                  <th>Severity</th>
+                  <th>Action Taken</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="right-column">
+        <section class="card">
+          <div class="section-header">
+            <h2>Automated Defense Controls</h2>
+            <span class="muted-text" id="roleHint">Admin required</span>
+          </div>
+
+          <div class="control-list">
+            <div class="control-item">
+              <div>
+                <strong>WAF Perimeter Shield</strong>
+                <p>Inspect requests & block malicious patterns</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-control="waf_firewall" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="control-item">
+              <div>
+                <strong>Auto IP Blacklisting</strong>
+                <p>Ban high-severity & brute-force source IPs</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-control="auto_ip_block" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="control-item">
+              <div>
+                <strong>Session Auto-Purge</strong>
+                <p>Revoke anomalous or unauthorized sessions</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-control="session_purge" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="control-item">
+              <div>
+                <strong>Real-Time Telemetry Alerts</strong>
+                <p>Record & surface critical incident flags</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-control="threat_alerts" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>Blocked IP Registry</h2>
+          </div>
+
+          <form id="manualBlockForm" class="inline-form">
+            <input type="text" id="ipInput" placeholder="e.g. 203.0.113.42" required />
+            <input type="text" id="ipReasonInput" placeholder="Reason (optional)" />
+            <button type="submit" class="btn-primary">Block</button>
+          </form>
+          <p class="form-error" id="ipFormError"></p>
+
+          <ul class="ip-list" id="blockedIpList"></ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
