@@ -3,217 +3,441 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AEGIS // Automated Security Operations Dashboard</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>J.A.S.S // Jose Assistant Security System</title>
+  <link rel="stylesheet" href="./style.css?v=7" />
 </head>
 <body>
-  <!-- Authentication Modal -->
-  <div class="auth-backdrop" id="authModal">
-    <div class="auth-card card">
-      <div class="auth-header">
-        <span class="badge-pill">AEGIS SOC ACCESS</span>
-        <h2>Sign In to Security Console</h2>
-        <p class="muted-text">Authenticate with your analyst or admin credentials.</p>
-      </div>
-
-      <div class="auth-tabs">
-        <button type="button" class="tab-btn active" id="tabLogin">Login</button>
-        <button type="button" class="tab-btn" id="tabRegister">Create Account</button>
-      </div>
-
-      <form id="authForm" class="auth-form">
-        <div class="field" id="usernameField" style="display: none;">
-          <label for="authUsername">Username</label>
-          <input type="text" id="authUsername" placeholder="e.g. aaron_sec" />
-        </div>
-
-        <div class="field">
-          <label for="authEmail">Email Address</label>
-          <input type="email" id="authEmail" placeholder="analyst@aegis.local" required />
-        </div>
-
-        <div class="field">
-          <label for="authPassword">Password</label>
-          <input type="password" id="authPassword" placeholder="Minimum 8 characters" required />
-        </div>
-
-        <div class="field" id="roleField" style="display: none;">
-          <label for="authRole">Role</label>
-          <select id="authRole">
-            <option value="analyst">Analyst (Log, Block IP, Purge)</option>
-            <option value="admin">Admin (Full Control + Toggle Rules)</option>
-            <option value="viewer">Viewer (Read-Only)</option>
-          </select>
-        </div>
-
-        <p class="form-error" id="authError"></p>
-        <button type="submit" class="btn-primary full-width" id="authSubmitBtn">Continue to Dashboard</button>
-      </form>
+  <header class="hud-header">
+    <div class="brand">
+      <div id="statusDot" class="status-dot"></div>
+      <h1>J.A.S.S</h1>
+      <span class="sub-tag">// JOSE ASSISTANT SECURITY SYSTEM</span>
     </div>
-  </div>
+    <div class="header-actions">
+      <button id="apiKeyBtn" class="btn-sm" onclick="handleSetApiKey()">SET API KEY</button>
+      <button id="voiceToggleBtn" class="btn-sm" onclick="handleVoiceToggle()">VOICE: ON</button>
+      <button class="btn-sm" onclick="exportDatabaseFile()">EXPORT .DB</button>
+    </div>
+  </header>
 
-  <!-- Main Dashboard Shell -->
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <span class="status-dot" id="systemStatusDot"></span>
-        <div>
-          <h1>AEGIS <span>SOC</span></h1>
-          <small class="muted-text" id="sessionUserLabel">Not authenticated</small>
+  <main class="hud-grid">
+    <!-- Primary Column: Arc Reactor, Terminal & Creation Studio -->
+    <div class="hud-col col-main">
+      <section class="panel">
+        <div class="panel-title">
+          <span>Neural Core &amp; Terminal</span>
+          <span id="modeBadge">STANDBY</span>
         </div>
-      </div>
 
-      <div class="topbar-actions">
-        <span class="badge-pill" id="engineStatus">Automation: ACTIVE</span>
-        <button type="button" id="simulateAttackBtn" class="btn-outline">Simulate Threat Spike</button>
-        <button type="button" id="purgeSessionsBtn" class="btn-primary">Purge Stale Sessions</button>
-        <button type="button" id="logoutBtn" class="btn-outline">Logout</button>
-      </div>
-    </header>
-
-    <!-- KPI Summary Row -->
-    <section class="kpi-grid">
-      <div class="card">
-        <span class="card-label">Firewall Posture</span>
-        <div class="card-value" id="kpiFirewall">ENFORCED</div>
-        <span class="card-sub">WAF & edge policy inspection</span>
-      </div>
-      <div class="card">
-        <span class="card-label">Threats Neutralized</span>
-        <div class="card-value" id="kpiThreats">0</div>
-        <span class="card-sub" id="kpiThreatDelta">Synced with security ledger</span>
-      </div>
-      <div class="card">
-        <span class="card-label">Blocked IPs</span>
-        <div class="card-value" id="kpiBlockedIps">0</div>
-        <span class="card-sub">Validated IPv4/IPv6 registry</span>
-      </div>
-      <div class="card">
-        <span class="card-label">Purged Sessions</span>
-        <div class="card-value" id="kpiPurged">0</div>
-        <span class="card-sub">Unauthorized session revocations</span>
-      </div>
-    </section>
-
-    <!-- Main Content Grid -->
-    <main class="main-grid">
-      <div class="left-column">
-        <section class="card">
-          <div class="section-header">
-            <h2>Real-Time Traffic & Anomaly Telemetry</h2>
-            <span class="muted-text">4s telemetry interval</span>
-          </div>
-          <div class="chart-container">
-            <canvas id="trafficChart"></canvas>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="section-header log-header">
-            <h2>Live Security Event Feed</h2>
-            <div class="filter-group">
-              <input type="text" id="logSearchInput" placeholder="Filter IP or event..." />
-              <select id="severityFilter">
-                <option value="ALL">All Severities</option>
-                <option value="CRITICAL">CRITICAL</option>
-                <option value="HIGH">HIGH</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="LOW">LOW</option>
-              </select>
-              <button type="button" id="refreshLogsBtn" class="text-btn">Refresh</button>
-            </div>
+        <div class="reactor-stage">
+          <div id="reactorCore" class="reactor" onclick="handleMicClick()" title="Tap core to speak">
+            <div class="ring-outer"></div>
+            <div class="ring-coils"></div>
+            <div class="ring-inner"></div>
+            <div class="ring-turbine"></div>
+            <div class="core-center"></div>
           </div>
 
-          <div class="table-wrapper">
-            <table class="log-table">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Event</th>
-                  <th>Source IP</th>
-                  <th>Severity</th>
-                  <th>Action Taken</th>
-                </tr>
-              </thead>
-              <tbody id="logTableBody"></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <aside class="right-column">
-        <section class="card">
-          <div class="section-header">
-            <h2>Automated Defense Controls</h2>
-            <span class="muted-text" id="roleHint">Admin required</span>
+          <div id="eqVisualizer" class="equalizer">
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
           </div>
 
-          <div class="control-list">
-            <div class="control-item">
-              <div>
-                <strong>WAF Perimeter Shield</strong>
-                <p>Inspect requests & block malicious patterns</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" data-control="waf_firewall" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
+          <div id="reactorLabel" class="reactor-label">TAP CORE OR MIC TO SPEAK</div>
+        </div>
 
-            <div class="control-item">
-              <div>
-                <strong>Auto IP Blacklisting</strong>
-                <p>Ban high-severity & brute-force source IPs</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" data-control="auto_ip_block" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
+        <div class="terminal-output">
+          <div id="output">Systems initialized. Tap SET API KEY above to link your Gemini key, or use built-in commands right away.</div>
+          <div id="sources" class="sources"></div>
+        </div>
 
-            <div class="control-item">
-              <div>
-                <strong>Session Auto-Purge</strong>
-                <p>Revoke anomalous or unauthorized sessions</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" data-control="session_purge" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
+        <div class="quick-chips">
+          <button class="chip" onclick="runQuickCmd('search Subic Bay')">Search Web</button>
+          <button class="chip" onclick="runQuickCmd('create a complete HTML, CSS, and JavaScript security dashboard with separate index.html, style.css, and script.js files')">Create Full Web App</button>
+          <button class="chip" onclick="runQuickCmd('create an image of a futuristic arc reactor')">Create Image</button>
+          <button class="chip" onclick="runQuickCmd('create a PDF study guide on linked lists')">Create PDF</button>
+          <button class="chip" onclick="runQuickCmd('system check')">System Check</button>
+        </div>
 
-            <div class="control-item">
-              <div>
-                <strong>Real-Time Telemetry Alerts</strong>
-                <p>Record & surface critical incident flags</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" data-control="threat_alerts" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
+        <div class="command-bar">
+          <input type="text" id="cmdInput" placeholder="Search or create anything..." />
+          <button id="micBtn" class="btn btn-mic" onclick="handleMicClick()">MIC</button>
+          <button class="btn" onclick="sendCommand()">SEND</button>
+        </div>
+      </section>
+
+      <!-- Body Module Workspace: Search Results & Generated Artifacts -->
+      <section id="bodyStudio" class="panel">
+        <div class="panel-title">
+          <span>Creation &amp; Search Studio</span>
+          <span id="studioBadge">READY</span>
+        </div>
+        <div id="studioContent" class="terminal-output" style="min-height:110px; max-height:340px;">
+          <div class="meta">Generated images, motion videos, PDFs, multi-file code (HTML, CSS, JS, Python, C#, PHP, SQL, etc.), live HTML previews, and web search cards will appear here.</div>
+        </div>
+        <div id="studioActions" style="display:flex; gap:0.4rem; margin-top:0.6rem; flex-wrap:wrap;"></div>
+      </section>
+    </div>
+
+    <!-- Telemetry & Diagnostics Column -->
+    <div class="hud-col col-left">
+      <section class="panel">
+        <div class="panel-title">
+          <span>System Telemetry</span>
+          <span id="clockDisplay">--:--</span>
+        </div>
+        <div class="stat-row">
+          <span>CORE STATUS</span>
+          <span id="coreStatus" class="stat-val">BOOTING...</span>
+        </div>
+        <div class="stat-row">
+          <span>OPERATOR</span>
+          <span class="stat-val">AARON</span>
+        </div>
+        <div class="stat-row">
+          <span>AI ENGINE</span>
+          <span id="aiEngineVal" class="stat-val">GEMINI 2.5</span>
+        </div>
+        <div class="stat-row">
+          <span>DB TABLES</span>
+          <span id="tableCount" class="stat-val">--</span>
+        </div>
+        <div class="stat-row">
+          <span>SAVED LOGS</span>
+          <span id="logCount" class="stat-val">0</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>Device Diagnostics</span>
+          <span id="netBadge" style="color:#10b981;">ONLINE</span>
+        </div>
+        <div class="stat-row">
+          <span>PLATFORM</span>
+          <span id="platformVal" class="stat-val">--</span>
+        </div>
+        <div class="stat-row">
+          <span>POWER CELL</span>
+          <span id="batteryVal" class="stat-val">CHECKING...</span>
+        </div>
+        <div class="stat-row">
+          <span>VOICE SYNTH</span>
+          <span id="voiceStateVal" class="stat-val">READY</span>
+        </div>
+
+        <div class="meter-wrap">
+          <div class="meter-label">
+            <span>LOCAL STORAGE CAPACITY</span>
+            <span id="storagePct">0%</span>
           </div>
-        </section>
-
-        <section class="card">
-          <div class="section-header">
-            <h2>Blocked IP Registry</h2>
+          <div class="meter-track">
+            <div id="storageBar" class="meter-fill" style="width: 8%;"></div>
           </div>
+        </div>
+      </section>
 
-          <form id="manualBlockForm" class="inline-form">
-            <input type="text" id="ipInput" placeholder="e.g. 203.0.113.42" required />
-            <input type="text" id="ipReasonInput" placeholder="Reason (optional)" />
-            <button type="submit" class="btn-primary">Block</button>
-          </form>
-          <p class="form-error" id="ipFormError"></p>
+      <section class="panel">
+        <div class="panel-title">
+          <span>Neural Event Stream</span>
+          <span>LIVE</span>
+        </div>
+        <div id="eventStream" class="event-stream"></div>
+      </section>
+    </div>
 
-          <ul class="ip-list" id="blockedIpList"></ul>
-        </section>
-      </aside>
-    </main>
-  </div>
+    <!-- SQLite Memory Log Column -->
+    <div class="hud-col col-right">
+      <section class="panel">
+        <div class="panel-title">
+          <span>SQLite Memory Log</span>
+          <button class="btn-sm" onclick="handleClearHistory()">CLEAR</button>
+        </div>
+        <div id="historyList" class="history-feed">
+          <div class="meta">No records logged yet.</div>
+        </div>
+      </section>
+    </div>
+  </main>
 
-  <script src="/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.16.0/dist/sql-wasm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="./Connect_db.js?v=7"></script>
+  <script src="./Brain.js?v=7"></script>
+  <script src="./Voice.js?v=7"></script>
+  <script src="./Body.js?v=7"></script>
+  <script>
+    /** @param {any} str */
+    function safeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /** @param {string} msg */
+    function logEvent(msg) {
+      const stream = document.getElementById("eventStream");
+      if (!stream) return;
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const line = document.createElement("div");
+      line.className = "event-line";
+      line.textContent = `[${time}] ${msg}`;
+      stream.prepend(line);
+    }
+
+    function updateApiKeyButton() {
+      const btn = document.getElementById("apiKeyBtn");
+      if (!btn) return;
+      const hasKey = Boolean(getJassApiKey());
+      btn.textContent = hasKey ? "API KEY: SET" : "SET API KEY";
+      btn.style.borderColor = hasKey ? "#10b981" : "#f59e0b";
+      btn.style.color = hasKey ? "#10b981" : "#fde68a";
+    }
+
+    function handleSetApiKey() {
+      const current = getJassApiKey();
+      const entered = prompt(
+        "Enter your Gemini API key (stored privately in your browser's localStorage, never uploaded to GitHub):",
+        current
+      );
+      if (entered === null) return;
+      setJassApiKey(entered.trim());
+      updateApiKeyButton();
+      updateStorageMeter();
+      logEvent(entered.trim() ? "Gemini API key saved to browser storage." : "Gemini API key cleared.");
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("clockDisplay").textContent = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    async function loadDiagnostics() {
+      const ua = navigator.userAgent;
+      let os = "DESKTOP";
+      if (/Android/i.test(ua)) os = "ANDROID OS";
+      else if (/iPhone|iPad/i.test(ua)) os = "iOS / IPADOS";
+      else if (/Windows/i.test(ua)) os = "WINDOWS OS";
+      else if (/Mac/i.test(ua)) os = "MACOS";
+      document.getElementById("platformVal").textContent = os;
+
+      const netBadge = document.getElementById("netBadge");
+      netBadge.textContent = navigator.onLine ? "LINKED" : "OFFLINE";
+      netBadge.style.color = navigator.onLine ? "#10b981" : "#ef4444";
+
+      if ("getBattery" in navigator) {
+        try {
+          // @ts-ignore
+          const battery = await navigator.getBattery();
+          const updateBat = () => {
+            const pct = Math.round(battery.level * 100);
+            document.getElementById("batteryVal").textContent = `${pct}% ${battery.charging ? "(CHG)" : ""}`;
+          };
+          updateBat();
+          battery.addEventListener("levelchange", updateBat);
+          battery.addEventListener("chargingchange", updateBat);
+        } catch (e) {
+          document.getElementById("batteryVal").textContent = "AC POWER";
+        }
+      } else {
+        document.getElementById("batteryVal").textContent = "AC POWER";
+      }
+
+      updateStorageMeter();
+    }
+
+    function updateStorageMeter() {
+      let totalBytes = 0;
+      for (let key in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+          totalBytes += (localStorage[key].length + key.length) * 2;
+        }
+      }
+      const kb = (totalBytes / 1024).toFixed(1);
+      const pct = Math.min(100, Math.max(4, Math.round((totalBytes / (5 * 1024 * 1024)) * 100)));
+      document.getElementById("storagePct").textContent = `${kb} KB (${pct}%)`;
+      document.getElementById("storageBar").style.width = `${pct}%`;
+    }
+
+    /** @param {string} state */
+    function setReactorState(state) {
+      const core = document.getElementById("reactorCore");
+      const label = document.getElementById("reactorLabel");
+      const badge = document.getElementById("modeBadge");
+      const eq = document.getElementById("eqVisualizer");
+
+      core.classList.remove("listening", "speaking");
+      eq.classList.remove("active");
+
+      if (state === "listening") {
+        core.classList.add("listening");
+        eq.classList.add("active");
+        label.textContent = "LISTENING FOR VOICE...";
+        badge.textContent = "MIC ACTIVE";
+      } else if (state === "speaking") {
+        core.classList.add("speaking");
+        eq.classList.add("active");
+        label.textContent = "TRANSMITTING AUDIO...";
+        badge.textContent = "SPEAKING";
+      } else if (state === "processing") {
+        label.textContent = "PROCESSING NEURAL QUERY...";
+        badge.textContent = "COMPUTING";
+      } else {
+        label.textContent = "TAP CORE OR MIC TO SPEAK";
+        badge.textContent = "STANDBY";
+      }
+    }
+
+    function handleVoiceToggle() {
+      const isOn = toggleVoiceOutput();
+      document.getElementById("voiceToggleBtn").textContent = isOn ? "VOICE: ON" : "VOICE: OFF";
+      document.getElementById("voiceStateVal").textContent = isOn ? "READY" : "MUTED";
+      logEvent(`Audio synthesis ${isOn ? "enabled" : "muted"}.`);
+      if (!isOn) setReactorState("idle");
+    }
+
+    function handleMicClick() {
+      const micBtn = document.getElementById("micBtn");
+      const output = document.getElementById("output");
+
+      toggleListening(
+        /** @param {string} spokenText */
+        (spokenText) => {
+          document.getElementById("cmdInput").value = spokenText;
+          logEvent(`Voice input captured: "${spokenText}"`);
+          sendCommand();
+        },
+        /** @param {string} state */
+        (state) => {
+          if (state === "Listening...") {
+            micBtn.classList.add("listening");
+            micBtn.textContent = "STOP";
+            output.textContent = "Listening for voice command (say 'stop listening' to end)...";
+            setReactorState("listening");
+            logEvent("Microphone array active.");
+          } else {
+            micBtn.classList.remove("listening");
+            micBtn.textContent = "MIC";
+            setReactorState("idle");
+            if (state !== "idle") {
+              output.textContent = state;
+              logEvent(state);
+            }
+          }
+        }
+      );
+    }
+
+    /** @param {string} cmd */
+    function runQuickCmd(cmd) {
+      document.getElementById("cmdInput").value = cmd;
+      sendCommand();
+    }
+
+    async function renderHistory() {
+      const listEl = document.getElementById("historyList");
+      const logs = await getHistory(20);
+      document.getElementById("logCount").textContent = String(logs.length);
+      updateStorageMeter();
+
+      if (!logs.length) {
+        listEl.innerHTML = "<div class='meta'>No records logged yet.</div>";
+        return;
+      }
+      listEl.innerHTML = logs.map(
+        /** @param {any} item */
+        (item) => `
+        <div class="history-item">
+          <div class="meta">#${item.id} • ${safeHtml(item.timestamp)}</div>
+          <div><strong style="color:#38bdf8;">Q:</strong> ${safeHtml(item.prompt)}</div>
+          <div style="margin-top:0.25rem; color:#cbd5e1;"><strong style="color:#7dd3fc;">A:</strong> ${safeHtml(item.response)}</div>
+        </div>
+      `).join("");
+    }
+
+    async function handleClearHistory() {
+      await clearHistory();
+      await renderHistory();
+      logEvent("SQLite history table purged.");
+    }
+
+    async function initSystem() {
+      const statusDot = document.getElementById("statusDot");
+      const coreStatus = document.getElementById("coreStatus");
+      updateApiKeyButton();
+      logEvent("Booting Jose Assistant Security System...");
+      await loadDiagnostics();
+
+      try {
+        const tables = await getTables();
+        coreStatus.textContent = "ONLINE";
+        document.getElementById("tableCount").textContent = String(tables.length);
+        logEvent(`SQLite mounted (${tables.length} tables active).`);
+        await renderHistory();
+        logEvent("All subsystems nominal.");
+      } catch (err) {
+        statusDot.classList.add("offline");
+        coreStatus.style.color = "#ef4444";
+        coreStatus.textContent = "OFFLINE";
+        document.getElementById("output").textContent = `System Boot Error: ${err.message}`;
+        logEvent(`Boot failure: ${err.message}`);
+      }
+    }
+
+    async function sendCommand() {
+      const input = document.getElementById("cmdInput");
+      const output = document.getElementById("output");
+      const sourcesEl = document.getElementById("sources");
+      const text = input.value.trim();
+      if (!text) return;
+
+      output.textContent = `> ${text}\n\nProcessing...`;
+      sourcesEl.innerHTML = "";
+      input.value = "";
+      setReactorState("processing");
+      logEvent(`Query transmitted: "${text}"`);
+
+      const reply = await askJASS(text);
+      output.textContent = `> ${text}\n\n${reply.text}`;
+      logEvent("Response committed to SQLite.");
+
+      renderBodyWorkspace(text, reply);
+
+      setReactorState("speaking");
+      speakJASS(reply.text, () => {
+        if (!JASS_VOICE.continuousMode) setReactorState("idle");
+      });
+
+      if (reply.sources && reply.sources.length) {
+        sourcesEl.innerHTML = "<strong>Verified Sources:</strong>" + reply.sources
+          .map(
+            /** @param {any} s */
+            (s) => `<a href="${s.url}" target="_blank">• ${safeHtml(s.title)}</a>`
+          )
+          .join("");
+      }
+
+      await renderHistory();
+    }
+
+    document.getElementById("cmdInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendCommand();
+    });
+
+    initSystem();
+  </script>
 </body>
 </html>
